@@ -34,7 +34,7 @@ namespace TerrariaIRC
 
         public override Version Version
         {
-            get { return new Version(1, 2, 0, 2); }
+            get { return new Version(1, 2, 0, 5); }
         }
         public TerrariaIRC(Main game) : base(game)
         {
@@ -129,14 +129,27 @@ namespace TerrariaIRC
               } // if
               else
               {
-                var user = new IRCPlayer( e.Data.Nick ) { Group = new SuperAdminGroup() };
-                String conCommand = "/" + message.TrimStart( '!' );
-                Console.WriteLine( "~ !/: " + message );
-                TShockAPI.Commands.HandleCommand( user, conCommand );
-                foreach ( var t in user.Output )
+                if ( !message.ToLower().Contains( "superadmin" ) )
                 {
-                  irc.RfcPrivmsg( e.Data.Nick, t );
-                } // for
+                  if ( IsAllowed( e.Data.Nick ) )
+                  {
+                    var user = new IRCPlayer( e.Data.Nick ) { Group = new SuperAdminGroup() };
+                    String conCommand = "/" + message.TrimStart( '!' );
+                    TShockAPI.Commands.HandleCommand( user, conCommand );
+                    foreach ( var outputMessage in user.Output )
+                    {
+                      irc.RfcPrivmsg( e.Data.Nick, outputMessage );
+                    } // for
+                  } // if
+                  else
+                  {
+                    irc.RfcPrivmsg( e.Data.Nick, "You are not authorized to perform commands on the server." );
+                  } // else
+                } // if
+                else
+                {
+                  irc.RfcPrivmsg( e.Data.Nick, "Command not allowed through irc." );
+                } // else
               } // else
             } // if
             else
