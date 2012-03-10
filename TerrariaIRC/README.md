@@ -1,5 +1,9 @@
 ## TerrariaIRC
 
+Ver 1.2.0.6
+* Add retry delay and max retry to connect
+* Replaced console messages with log messages
+
 Ver 1.2.0.5
 * Block commands with 'superadmin' in them
    (crude filter)

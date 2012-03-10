@@ -34,7 +34,7 @@ namespace TerrariaIRC
 
         public override Version Version
         {
-            get { return new Version(1, 2, 0, 5); }
+            get { return new Version(1, 2, 0, 6); }
         }
         public TerrariaIRC(Main game) : base(game)
         {
@@ -65,8 +65,8 @@ namespace TerrariaIRC
             irc.OnRawMessage += OnRawMessage;
             if (!settings.Load())
             {
-                Console.WriteLine("Settings failed to load, aborting IRC connection.");
-                return;
+              Log.Error( "Settings failed to load, aborting IRC connection." );
+              return;
             }
             Commands.Init();
             new Thread( Connect ).Start();
@@ -91,30 +91,35 @@ namespace TerrariaIRC
 
         #region IRC methods
         // _Jon : not functional 03-03-12 -> moved to "OnChannelMessage"
+/*      
         public static void OnQueryMessage(object sender, IrcEventArgs e)
         {
           var message = e.Data.Message;
-            if ( IsAllowed( e.Data.Nick ) )
+          if ( IsAllowed( e.Data.Nick ) )
+          {
+            if ( message.StartsWith( "!" ) )
             {
-                if (message.StartsWith("!"))
-                {
-                  Console.WriteLine( "~ ! : " + message );
-                  var user = new IRCPlayer( e.Data.Nick ) { Group = new SuperAdminGroup() };
-                  String conCommand = "/" + message.TrimStart( '!' );
-                  TShockAPI.Commands.HandleCommand( user, conCommand );
-                  foreach ( var t in user.Output )
-                  {
-                    irc.RfcPrivmsg( e.Data.Nick, t );
-                  } // for
-                }
+              //Console.WriteLine( "~ ! : " + message );
+              var user = new IRCPlayer( e.Data.Nick ) { Group = new SuperAdminGroup() };
+              String conCommand = "/" + message.TrimStart( '!' );
+              Log.Info( user + " invoked command: " + conCommand );
+              TShockAPI.Commands.HandleCommand( user, conCommand );
+              foreach ( var t in user.Output )
+              {
+                irc.RfcPrivmsg( e.Data.Nick, t );
+              } // for
             }
-            else
-                irc.RfcPrivmsg(e.Data.Nick, "You are not allowed to perform that action.");
+          }
+          else
+          {
+            Log.Warn( e.Data.Nick + " attempted to invoked command: " + message );
+            irc.RfcPrivmsg( e.Data.Nick, "You are not allowed to perform that action." );
+          }
         }
-
+*/
         public static void OnError(object sender, ErrorEventArgs e)
         {
-            Console.WriteLine("IRC Error: {0}", e.Data.RawMessage);
+          Log.Error( "IRC Error: " + e.Data.RawMessage );
         }
 
         void OnChannelMessage(object sender, IrcEventArgs e)
@@ -135,6 +140,7 @@ namespace TerrariaIRC
                   {
                     var user = new IRCPlayer( e.Data.Nick ) { Group = new SuperAdminGroup() };
                     String conCommand = "/" + message.TrimStart( '!' );
+                    Log.Info( user + " invoked command: " + conCommand );
                     TShockAPI.Commands.HandleCommand( user, conCommand );
                     foreach ( var outputMessage in user.Output )
                     {
@@ -143,11 +149,13 @@ namespace TerrariaIRC
                   } // if
                   else
                   {
+                    Log.Warn( e.Data.Nick + " attempted to invoked command: " + message );
                     irc.RfcPrivmsg( e.Data.Nick, "You are not authorized to perform commands on the server." );
                   } // else
                 } // if
                 else
                 {
+                  Log.Warn( e.Data.Nick + " attempted to invoked command: " + message );
                   irc.RfcPrivmsg( e.Data.Nick, "Command not allowed through irc." );
                 } // else
               } // else
@@ -161,39 +169,44 @@ namespace TerrariaIRC
 
         void OnRawMessage(object sender, IrcEventArgs e)
         {
-            Debug.Write(e.Data.RawMessage);
+          Debug.Write( e.Data.RawMessage );
         }
 
         public static void Connect()
         {
-            while (StayConnected)
+          int maxAttempts  = 3;
+          int attemptCount = 0;
+          int sleepDelay   = 15 * 60 * 1000; // 15 minutes
+            while (StayConnected & attemptCount < maxAttempts )
             {
-                Console.WriteLine("Connecting to {0}:{1}...", settings["server"], settings["port"]);
+              Log.Info( "Connecting to " + settings["server"] + ":" + settings["port"] + "..." );
                 try
                 {
                     irc.Connect(settings["server"], int.Parse(settings["port"]));
                     irc.ListenOnce();
-                    Console.WriteLine("Connected to IRC server.");
-                }
+                    Log.Info( "Connected to IRC server." );
+                } // try
                 catch (Exception e)
                 {
-                    Console.WriteLine("Error connecting to IRC server.");
-                    Console.WriteLine(e);
-                    return;
-                }
+                  Log.Error( "Error connecting to IRC server." );
+                  Log.Error( e.Message );
+                  Thread.Sleep( sleepDelay ); 
+                  //return;
+                } // catch
                 irc.Login(settings["botname"], "TerrariaIRC");
                 irc.ListenOnce();
-                Console.WriteLine("Trying to join {0}...", settings["channel"]);
+                Log.Info( "Trying to join " + settings["channel"] + "..." );
                 irc.RfcJoin(settings["channel"]);
                 irc.ListenOnce();
-                Console.WriteLine("Joined {0}", settings["channel"]);
+                Log.Info( "Joined " + settings["channel"] );
                 if (settings.ContainsKey("nickserv") && settings.ContainsKey("password"))
                 {
                     irc.RfcPrivmsg(settings["nickserv"], settings["password"]);
                     irc.ListenOnce();
-                }
+                } // if
                 irc.Listen();
-                Console.WriteLine("Disconnected from IRC... Attempting to reconnect");
+                Log.Error( "Disconnected from IRS... Attempting to reconnect: " + attemptCount );
+                attemptCount++;
             }
         }
 
