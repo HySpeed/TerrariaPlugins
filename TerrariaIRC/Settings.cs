@@ -11,8 +11,8 @@ namespace TerrariaIRC
         public bool Load()
         {
             string[] file;
-            if (File.Exists(TerrariaIRC.settingsfiles))
-                file = File.ReadAllLines(TerrariaIRC.settingsfiles);
+            if (File.Exists(TerrariaIRC.settingsfile))
+                file = File.ReadAllLines(TerrariaIRC.settingsfile);
             else
                 return false;
             foreach (var t in file.Where(t => !t.StartsWith("//") && !t.StartsWith("#")).Where(t => t.Split('=').Length == 2))

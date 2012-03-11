@@ -1,5 +1,13 @@
 ## TerrariaIRC
 
+Ver 1.2.0.8
+* Added commands for getting player info:
+. . IInv <name> [ Inv <row> | Acc | Arm | Amm ]
+. . IInfo <name> [ Life ]
+
+Ver 1.2.0.7
+* Added display of Life & Mana after join
+
 Ver 1.2.0.6
 * Add retry delay and max retry to connect
 * Replaced console messages with log messages

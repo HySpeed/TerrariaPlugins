@@ -4,19 +4,256 @@ using System.Linq;
 using System.Text;
 using TShockAPI;
 
+// TerrariaIRC *****************************************************************
 namespace TerrariaIRC
 {
+
+  
+    // Commands ****************************************************************
     class Commands
     {
-        public static void Init()
-        {
-            TShockAPI.Commands.ChatCommands.Add(new Command("manageirc", Reconnect, "reconnectirc"));
-        }
 
-        public static void Reconnect(CommandArgs args)
+      // Init ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      public static void Init()
+      {
+        TShockAPI.Commands.ChatCommands.Add( new Command( "manageirc", Reconnect,    "reconirc" ) );
+        TShockAPI.Commands.ChatCommands.Add( new Command( "manageirc", IrcInventory, "iinv"     ) );
+        TShockAPI.Commands.ChatCommands.Add( new Command( "manageirc", IrcInfo,      "iinfo"    ) );
+      } // Init ----------------------------------------------------------------
+
+
+      // Reconnect +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      // Because the 'Connect' method is set to auto-reconnect, disconnecting
+      // . will restart that loop.
+      public static void Reconnect( CommandArgs args )
+      {
+        TerrariaIRC.resetConnectionSettings();
+        TerrariaIRC.irc.Disconnect();
+        TShock.Utils.SendLogs( "Disconnected from IRC, reconnecting.", Color.Red );
+      } // Reconnect -----------------------------------------------------------
+
+
+      // IrcInventory ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      public static void IrcInventory( CommandArgs args )
+      {
+        if ( args.Parameters.Count <= 1 ) 
         {
-            TerrariaIRC.irc.Disconnect();
-            TShock.Utils.SendLogs("Disconnected from IRC, reconnecting.", Color.Red);
-        }
-    }
-}
+          TerrariaIRC.sendIRCMessage( "Invalid syntax. Proper Syntax: /iinv <player> [ INV <row> | ACC | AMM | ARM ]" );
+        } // if
+        else if ( args.Parameters.Count > 1 )
+        {
+          TShockAPI.TSPlayer player;
+          string playerName, action;
+          playerName = args.Parameters[0];
+
+          player = findPlayer( playerName ); 
+          if ( player != null ) 
+          {
+            action = args.Parameters[1].ToUpper();
+
+            switch ( action ) {
+              case "ACC":
+              {
+                showAcc( player );
+                break;
+              } // case
+              case "AMM":
+              {
+                showAmm( player );
+                break;
+              } // case
+              case "ARM":
+              {
+                showArm( player );
+                break;
+              } // case
+              case "INV":
+              {
+                if ( args.Parameters.Count == 3 ) 
+                {
+                  showInv( player, Convert.ToInt32( args.Parameters[2] ) );
+                } // if
+                else 
+                {
+                  TerrariaIRC.sendIRCMessage( "Row required for INV action (e.g. iirc name row)" );
+                } // else
+                break;
+              } // case
+              default:
+              {
+                TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}", action ) );
+                break;
+              } // default
+            } // switch
+
+          } // if
+
+        } // else if
+
+      } // IrcInventory --------------------------------------------------------
+        // this line gets 'active' items, that is, item slots that have an item in them.
+        //var activeItems = player.TPlayer.inventory.Where( p => p.active ).ToList();  
+
+
+      // showAcc +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static void showAcc( TShockAPI.TSPlayer player )
+      {
+        StringBuilder response = new StringBuilder();
+        String itemName;
+        int firstSlot = 3, lastSlot = 8;
+
+        for ( int index = firstSlot; index <= lastSlot; index++ ) {
+          itemName = player.TPlayer.armor[index].name;
+          if ( itemName.Length == 0 ) { itemName = "(no item)"; } // if
+          response.Append( itemName );
+          if ( index < lastSlot ) { response.Append( " | " ); } // if
+        } // for
+
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Acc: {1}", player.Name, response ) );
+      } // showAcc -------------------------------------------------------------
+
+
+      // showArm +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static void showArm( TShockAPI.TSPlayer player )
+      {
+        StringBuilder response = new StringBuilder();
+        String itemName;
+        int firstSlot = 0, lastSlot = 2;
+
+        for ( int index = firstSlot; index <= lastSlot; index++ ) {
+          itemName = player.TPlayer.armor[index].name;
+          if ( itemName.Length == 0 ) { itemName = "(no item)"; } // if
+          response.Append( itemName );
+          if ( index < lastSlot ) { response.Append( " | " ); } // if
+        } // for
+
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Arm: {1}", player.Name, response ) );
+      } // showArm -------------------------------------------------------------
+
+
+      // showAmm +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static void showAmm( TShockAPI.TSPlayer player )
+      {
+        StringBuilder response = new StringBuilder();
+        String itemName;
+        int firstSlot = 44, lastSlot = 47;
+
+        for ( int index = firstSlot; index <= lastSlot; index++ ) {
+          itemName = player.TPlayer.inventory[index].name;
+          if ( itemName.Length == 0 ) { itemName = "(no item)"; } // if
+          response.Append( itemName ).Append( " (" );
+          response.Append( player.TPlayer.inventory[index].stack ).Append( ")" );
+          if ( index < lastSlot ) { response.Append( " | " ); } // if
+        } // for
+
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Amm: {1}", player.Name, response ) );
+      } // showAmm -------------------------------------------------------------
+
+
+      // showInv +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static void showInv( TShockAPI.TSPlayer player, int row )
+      {
+        StringBuilder response = new StringBuilder();
+        String itemName;
+        List<int> firstSlot = new List<int>(5) {  0, 0, 10, 20, 30 };
+        List<int> lastSlot  = new List<int>(5) { -1, 9, 19, 29, 39 };
+
+        if ( row < firstSlot.Count && lastSlot[row] > 0 ) 
+        {
+
+          for ( int index = firstSlot[row]; index <= lastSlot[row]; index++ ) {
+            itemName = player.TPlayer.inventory[index].name;
+            if ( itemName.Length == 0 ) { itemName = "(no item)"; } // if
+            response.Append( itemName ).Append( " (" );
+            response.Append( player.TPlayer.inventory[index].stack ).Append( ")" );
+            if ( index < lastSlot[row] ) { response.Append( " | " ); } // if
+          } // for
+
+          TerrariaIRC.sendIRCMessage( string.Format( "{0} Inv Row [{1}]: {2}", player.Name, row, response ) );
+        } // if
+        else 
+        {
+          TerrariaIRC.sendIRCMessage( string.Format( "Invalid row: {0}.  Only 1 - 4 are allowed.", row ) );
+        } // else
+
+
+      } // showInv -------------------------------------------------------------
+
+
+      // IrcInfo +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      public static void IrcInfo( CommandArgs args )
+      {
+        if ( args.Parameters.Count <= 1 ) 
+        {
+          TerrariaIRC.sendIRCMessage( "Invalid syntax. Proper Syntax: /iinfo <player> [ LIFE ]" );
+        } // if
+        else if ( args.Parameters.Count > 1 )
+        {
+          TShockAPI.TSPlayer player;
+          string playerName, action;
+          playerName = args.Parameters[0];
+
+          player = findPlayer( playerName ); 
+          if ( player != null ) 
+          {
+            action = args.Parameters[1].ToUpper();
+
+            switch ( action ) 
+            {
+              case "LIFE":
+              {
+                showLifeMana( player );
+                break;
+              } // case
+              default:
+              {
+                TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}", action ) );
+                break;
+              } // default
+
+            } // switch
+          } // if
+        } // else if
+
+      } // IrcInfo -------------------------------------------------------------
+
+
+      // showLifeMana ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static void showLifeMana( TShockAPI.TSPlayer player )
+      {
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Life / Mana: ({1}/{2})",
+                                                   player.Name,
+                                                   player.FirstMaxHP,
+                                                   player.FirstMaxMP ) );
+
+      } // showLifeMana --------------------------------------------------------
+
+
+      // findPlayer ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static TShockAPI.TSPlayer findPlayer( string playerName )
+      {
+        TShockAPI.TSPlayer result = null;
+
+          List<TShockAPI.TSPlayer> playerList = TShockAPI.TShock.Utils.FindPlayer( playerName );
+          if ( playerList.Count < 1 )
+          {
+            TerrariaIRC.sendIRCMessage( string.Format( "Player {0} not found.", playerName ) );
+          } // if
+          else if ( playerList.Count > 1 )
+          {
+            TerrariaIRC.sendIRCMessage( string.Format( "Multiple players matched {0}.", playerName ) );
+          } // else if
+          else
+          {
+            result = playerList[0];
+          } // else
+
+        return result;
+      } // findPlayer ----------------------------------------------------------
+
+
+
+  } // Commands ----------------------------------------------------------------
+
+
+} // TerrariaIRC ===============================================================
