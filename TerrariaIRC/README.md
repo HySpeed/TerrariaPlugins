@@ -1,5 +1,9 @@
 ## TerrariaIRC
 
+Ver 1.2.0.9
+* Added Buff command for Info:
+. . IInfo <name> [ Life | Buffs ]
+
 Ver 1.2.0.8
 * Added commands for getting player info:
 . . IInv <name> [ Inv <row> | Acc | Arm | Amm ]

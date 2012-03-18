@@ -176,7 +176,6 @@ namespace TerrariaIRC
           TerrariaIRC.sendIRCMessage( string.Format( "Invalid row: {0}.  Only 1 - 4 are allowed.", row ) );
         } // else
 
-
       } // showInv -------------------------------------------------------------
 
 
@@ -185,7 +184,7 @@ namespace TerrariaIRC
       {
         if ( args.Parameters.Count <= 1 ) 
         {
-          TerrariaIRC.sendIRCMessage( "Invalid syntax. Proper Syntax: /iinfo <player> [ LIFE ]" );
+          TerrariaIRC.sendIRCMessage( "Invalid syntax. Proper Syntax: /iinfo <player> [ Life | Buffs ]" );
         } // if
         else if ( args.Parameters.Count > 1 )
         {
@@ -203,6 +202,11 @@ namespace TerrariaIRC
               case "LIFE":
               {
                 showLifeMana( player );
+                break;
+              } // case
+              case "BUFFS":
+              {
+                showBuffs( player );
                 break;
               } // case
               default:
@@ -227,6 +231,40 @@ namespace TerrariaIRC
                                                    player.FirstMaxMP ) );
 
       } // showLifeMana --------------------------------------------------------
+
+
+      // showBuffs +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      private static void showBuffs( TShockAPI.TSPlayer player )
+      {
+        StringBuilder response = new StringBuilder();
+        String buffName;
+        bool buffFound = false;
+        int buffType;
+        int buffCount = player.TPlayer.countBuffs();
+
+        for ( int index = 0; index <= buffCount; index++ ) {
+          buffType = player.TPlayer.buffType[index];
+          if ( buffType > 0 ) { 
+            buffName = TShock.Utils.GetBuffName( buffType );
+            response.Append( buffName ).Append( " (" );
+            response.Append( player.TPlayer.buffTime[index] ).Append( ")" );
+            if ( index < buffCount-1 ) { response.Append( " | " ); } // if
+            buffFound = true;
+          } // if
+        } // for
+
+        if ( buffFound ) 
+        {
+          TerrariaIRC.sendIRCMessage( string.Format( "{0} Buffs: {1}", 
+                                                     player.Name, response ) );
+        } // if
+        else 
+        {
+          TerrariaIRC.sendIRCMessage( string.Format( "{0} has no Buffs", player.Name ) );
+        } // else
+
+
+      } // showBuffs -----------------------------------------------------------
 
 
       // findPlayer ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
