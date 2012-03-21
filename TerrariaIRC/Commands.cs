@@ -51,40 +51,25 @@ namespace TerrariaIRC
           {
             action = args.Parameters[1].ToUpper();
 
-            switch ( action ) {
-              case "ACC":
+                 if ( action.Equals( "ACC" ) ) { showAcc( player ); } // if
+            else if ( action.Equals( "ARM" ) ) { showArm( player ); } // if
+            else if ( action.Equals( "AMM" ) ) { showAmm( player ); } // if
+            else if ( action.Equals( "INV" ) ) 
+            { 
+              if ( args.Parameters.Count == 3 ) 
               {
-                showAcc( player );
-                break;
-              } // case
-              case "AMM":
+                showInv( player, Convert.ToInt32( args.Parameters[2] ) );
+              } // if
+              else 
               {
-                showAmm( player );
-                break;
-              } // case
-              case "ARM":
-              {
-                showArm( player );
-                break;
-              } // case
-              case "INV":
-              {
-                if ( args.Parameters.Count == 3 ) 
-                {
-                  showInv( player, Convert.ToInt32( args.Parameters[2] ) );
-                } // if
-                else 
-                {
-                  TerrariaIRC.sendIRCMessage( "Row required for INV action (e.g. iirc name row)" );
-                } // else
-                break;
-              } // case
-              default:
-              {
-                TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}", action ) );
-                break;
-              } // default
-            } // switch
+                TerrariaIRC.sendIRCMessage( "Row required for INV action (e.g. iirc name row)" );
+              } // else
+            } // if
+            else 
+            {
+              TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}", action ) );
+              TerrariaIRC.sendIRCMessage( "Invalid syntax. Proper Syntax: /iinv <player> [ INV <row> | ACC | AMM | ARM ]" );
+            } // else
 
           } // if
 
@@ -109,7 +94,7 @@ namespace TerrariaIRC
           if ( index < lastSlot ) { response.Append( " | " ); } // if
         } // for
 
-        TerrariaIRC.sendIRCMessage( string.Format( "{0} Acc: {1}", player.Name, response ) );
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Access: {1}", player.Name, response ) );
       } // showAcc -------------------------------------------------------------
 
 
@@ -127,7 +112,7 @@ namespace TerrariaIRC
           if ( index < lastSlot ) { response.Append( " | " ); } // if
         } // for
 
-        TerrariaIRC.sendIRCMessage( string.Format( "{0} Arm: {1}", player.Name, response ) );
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Armour: {1}", player.Name, response ) );
       } // showArm -------------------------------------------------------------
 
 
@@ -146,7 +131,7 @@ namespace TerrariaIRC
           if ( index < lastSlot ) { response.Append( " | " ); } // if
         } // for
 
-        TerrariaIRC.sendIRCMessage( string.Format( "{0} Amm: {1}", player.Name, response ) );
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} Ammo: {1}", player.Name, response ) );
       } // showAmm -------------------------------------------------------------
 
 
@@ -197,25 +182,13 @@ namespace TerrariaIRC
           {
             action = args.Parameters[1].ToUpper();
 
-            switch ( action ) 
+                 if ( action.Equals( "LIFE"  ) ) { showLifeMana( player ); } // if
+            else if ( action.Equals( "BUFFS" ) ) { showBuffs( player );    } // if
+            else 
             {
-              case "LIFE":
-              {
-                showLifeMana( player );
-                break;
-              } // case
-              case "BUFFS":
-              {
-                showBuffs( player );
-                break;
-              } // case
-              default:
-              {
                 TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}", action ) );
-                break;
-              } // default
-
-            } // switch
+            } // else
+          
           } // if
         } // else if
 
@@ -272,19 +245,19 @@ namespace TerrariaIRC
       {
         TShockAPI.TSPlayer result = null;
 
-          List<TShockAPI.TSPlayer> playerList = TShockAPI.TShock.Utils.FindPlayer( playerName );
-          if ( playerList.Count < 1 )
-          {
-            TerrariaIRC.sendIRCMessage( string.Format( "Player {0} not found.", playerName ) );
-          } // if
-          else if ( playerList.Count > 1 )
-          {
-            TerrariaIRC.sendIRCMessage( string.Format( "Multiple players matched {0}.", playerName ) );
-          } // else if
-          else
-          {
-            result = playerList[0];
-          } // else
+        List<TShockAPI.TSPlayer> playerList = TShockAPI.TShock.Utils.FindPlayer( playerName );
+        if ( playerList.Count < 1 )
+        {
+          TerrariaIRC.sendIRCMessage( string.Format( "Player {0} not found.", playerName ) );
+        } // if
+        else if ( playerList.Count > 1 )
+        {
+          TerrariaIRC.sendIRCMessage( string.Format( "Multiple players matched {0}.", playerName ) );
+        } // else if
+        else
+        {
+          result = playerList[0];
+        } // else
 
         return result;
       } // findPlayer ----------------------------------------------------------

@@ -88,47 +88,23 @@ namespace TerrariaIRC
 
     #region IRC methods
     // OnChannelMessage ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    void OnChannelMessage( object sender, IrcEventArgs e )
+    void OnChannelMessage( object sender, IrcEventArgs ircEvent )
     {
-      var message = e.Data.Message;
+      var message = ircEvent.Data.Message;
       if ( message.StartsWith( "!" ) )
       {
         if ( message.ToLower() == "!players" )
         {
-          var reply = TShock.Players.Where( player => player != null ).Where( player => player.RealPlayer ).Aggregate( "", ( current, player ) => current + (current == "" ? player.Name : ", " + player.Name) );
-          irc.SendMessage( SendType.Message, settings["channel"], "Current Players: " + reply );
+          ActionPlayers( sender, ircEvent );
         } // if
         else
         {
-          if ( !message.ToLower().Contains( "superadmin" ) )
-          {
-            if ( IsAllowed( e.Data.Nick ) )
-            {
-              var user = new IRCPlayer( e.Data.Nick ) { Group = new SuperAdminGroup() };
-              String conCommand = "/" + message.TrimStart( '!' );
-              Log.Info( user + " invoked command: " + conCommand );
-              TShockAPI.Commands.HandleCommand( user, conCommand );
-              foreach ( var outputMessage in user.Output )
-              {
-                irc.RfcPrivmsg( e.Data.Nick, outputMessage );
-              } // for
-            } // if
-            else
-            {
-              Log.Warn( e.Data.Nick + " attempted to invoked command: " + message );
-              irc.RfcPrivmsg( e.Data.Nick, "You are not authorized to perform commands on the server." );
-            } // else
-          } // if
-          else
-          {
-            Log.Warn( e.Data.Nick + " attempted to invoked command: " + message );
-            irc.RfcPrivmsg( e.Data.Nick, "Command not allowed through irc." );
-          } // else
+          ActionCommand( sender, ircEvent );
         } // else
       } // if
       else
       {
-        TShock.Utils.Broadcast( string.Format( "(IRC)<{0}> {1}", e.Data.Nick,
+        TShock.Utils.Broadcast( string.Format( "(IRC)<{0}> {1}", ircEvent.Data.Nick,
             TShock.Utils.SanitizeString( Regex.Replace( message, (char) 3 + "[0-9]{1,2}(,[0-9]{1,2})?", String.Empty ) ) ), Color.Green );
       } // else
     } // OnChannelMessage ------------------------------------------------------
@@ -144,7 +120,7 @@ namespace TerrariaIRC
     // Connect +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     public static void Connect()
     {
-      while ( stayConnected & attemptCount < maxAttempts )
+      while ( stayConnected && (attemptCount < maxAttempts) )
       {
         Log.Info( "Connecting to " + settings["server"] + ":" + settings["port"] + "..." );
         try
@@ -153,10 +129,10 @@ namespace TerrariaIRC
           irc.ListenOnce();
           Log.Info( "Connected to IRC server." );
         } // try
-        catch ( Exception e )
+        catch ( Exception exception )
         {
           Log.Error( "Error connecting to IRC server." );
-          Log.Error( e.Message );
+          Log.Error( exception.Message );
           Thread.Sleep( sleepDelay );
           //return;
         } // catch
@@ -172,10 +148,53 @@ namespace TerrariaIRC
           irc.ListenOnce();
         } // if
         irc.Listen();
-        Log.Error( "Disconnected from IRS... Attempting to reconnect: " + attemptCount );
+        Log.Error( "Disconnected from IRC... Attempting to reconnect: " + attemptCount );
         attemptCount++;
       } // while
     } // Connect ---------------------------------------------------------------
+
+
+    // ActionCommand +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    private void ActionCommand( object       sender, 
+                                IrcEventArgs ircEvent)
+    {
+      var message = ircEvent.Data.Message;
+      if ( !message.ToLower().Contains( "superadmin" ) )
+      {
+        if ( IsAllowed( ircEvent.Data.Nick ) )
+        {
+          var user = new IRCPlayer( ircEvent.Data.Nick ) { Group = new SuperAdminGroup() };
+          String conCommand = "/" + message.TrimStart( '!' );
+          Log.Info( user + " invoked command: " + conCommand );
+          TShockAPI.Commands.HandleCommand( user, conCommand );
+          foreach ( var outputMessage in user.Output )
+          {
+            irc.RfcPrivmsg( ircEvent.Data.Nick, outputMessage );
+          } // for
+        } // if
+        else
+        {
+          Log.Warn( ircEvent.Data.Nick + " attempted to invoked command: " + message );
+          irc.RfcPrivmsg( ircEvent.Data.Nick, "You are not authorized to perform commands on the server." );
+        } // else
+      } // if
+      else
+      {
+        Log.Warn( ircEvent.Data.Nick + " attempted to invoked command: " + message );
+        irc.RfcPrivmsg( ircEvent.Data.Nick, "Command not allowed through irc." );
+      } // else
+    } // ActionCommand ---------------------------------------------------------
+
+
+    // ActionPlayers +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    private void ActionPlayers( object       sender, 
+                                IrcEventArgs ircEvent )
+    {
+      var reply = TShock.Players.Where( player => player != null )
+                                .Where( player => player.RealPlayer )
+                                .Aggregate( "", ( current, player ) => current + (current == "" ? player.Name : ", " + player.Name) );
+      irc.SendMessage( SendType.Message, settings["channel"], "Current Players: " + reply );
+    } // ActionPlayers ---------------------------------------------------------
 
 
     // IsAllowed +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -231,7 +250,8 @@ namespace TerrariaIRC
       if ( e.Handled ) return;
 
       irc.SendMessage( SendType.Message, settings["channel"], 
-                       string.Format( "Joined: {0} ({1}/{2}) - {3}({4})", 
+                       string.Format( "Joined[{0}]: {1} ({2}/{3}) - {4}({5})", 
+                                      CountPlayers() + 1,
                                       Main.player[player].name,
                                       Main.player[player].statLifeMax,
                                       Main.player[player].statManaMax,
@@ -257,12 +277,24 @@ namespace TerrariaIRC
     } // OnJoin ----------------------------------------------------------------
 
 
+    private int CountPlayers()
+    {
+      int result = 0;
+      foreach ( TSPlayer player in TShock.Players ) 
+      {
+        if ( player != null && player.Active ) { result++; }
+      } // foreach
+
+      return result;
+    } // CountPlayers
+
     // OnLeave +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     void OnLeave( int player )
     {
       if ( !irc.IsConnected ) return;
       irc.SendMessage( SendType.Message, settings["channel"],
-                       string.Format( "Left: {0}",
+                       string.Format( "Left[{0}]: {1}",
+                       CountPlayers(),
                        Main.player[player].name ) );
     } // OnLeave ---------------------------------------------------------------
 
@@ -301,7 +333,7 @@ namespace TerrariaIRC
     // Version +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    public override Version Version
     {
-      get { return new Version( 1, 2, 0, 9 ); }
+      get { return new Version( 1, 2, 1, 1 ); }
     } // Versin ----------------------------------------------------------------
 
     

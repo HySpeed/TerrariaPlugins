@@ -1,12 +1,17 @@
 ## TerrariaIRC
 
+Ver 1.2.1.0
+* Added player count to join and leave:
+. . Joined [xx]: name (Life/Mana) - item[0](stack)
+. . Left [xx]: name
+
 Ver 1.2.0.9
 * Added Buff command for Info:
 . . IInfo <name> [ Life | Buffs ]
 
 Ver 1.2.0.8
 * Added commands for getting player info:
-. . IInv <name> [ Inv <row> | Acc | Arm | Amm ]
+. . IInv  <name> [ Inv <row> | Acc | Arm | Amm ]
 . . IInfo <name> [ Life ]
 
 Ver 1.2.0.7
