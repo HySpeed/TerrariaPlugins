@@ -1,5 +1,9 @@
 ## TerrariaIRC
 
+Ver 1.2.1.3
+* Added player IP to Life command
+* Added catch for IRC disconnect due to IRC split
+
 Ver 1.2.1.0
 * Added player count to join and leave:
 . . Joined [xx]: name (Life/Mana) - item[0](stack)

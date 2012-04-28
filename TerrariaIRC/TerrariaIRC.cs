@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -56,8 +57,8 @@ namespace TerrariaIRC
         stayConnected = false;
         if ( irc.IsConnected )
           irc.Disconnect();
-        ServerHooks.Chat -= OnChat;
-        ServerHooks.Join -= OnJoin;
+        ServerHooks.Chat  -= OnChat;
+        ServerHooks.Join  -= OnJoin;
         ServerHooks.Leave -= OnLeave;
         base.Dispose( disposing );
       } // if
@@ -134,22 +135,30 @@ namespace TerrariaIRC
           Log.Error( "Error connecting to IRC server." );
           Log.Error( exception.Message );
           Thread.Sleep( sleepDelay );
-          //return;
         } // catch
-        irc.Login( settings["botname"], "TerrariaIRC" );
-        irc.ListenOnce();
-        Log.Info( "Trying to join " + settings["channel"] + "..." );
-        irc.RfcJoin( settings["channel"] );
-        irc.ListenOnce();
-        Log.Info( "Joined " + settings["channel"] );
-        if ( settings.ContainsKey( "nickserv" ) && settings.ContainsKey( "password" ) )
+        try
         {
-          irc.RfcPrivmsg( settings["nickserv"], settings["password"] );
+          irc.Login( settings["botname"], "TerrariaIRC" );
           irc.ListenOnce();
-        } // if
-        irc.Listen();
-        Log.Error( "Disconnected from IRC... Attempting to reconnect: " + attemptCount );
-        attemptCount++;
+          Log.Info( "Trying to join " + settings["channel"] + "..." );
+          irc.RfcJoin( settings["channel"] );
+          irc.ListenOnce();
+          Log.Info( "Joined " + settings["channel"] );
+          if ( settings.ContainsKey( "nickserv" ) && settings.ContainsKey( "password" ) )
+          {
+            irc.RfcPrivmsg( settings["nickserv"], settings["password"] );
+            irc.ListenOnce();
+          } // if
+          irc.Listen();
+          Log.Error( "Disconnected from IRC... Attempting to reconnect: " + attemptCount );
+          attemptCount++;
+        } // try
+        catch ( Exception exception )
+        {
+          Log.Error( "Error communicating with IRC server." );
+          Log.Error( exception.Message );
+          return;
+        } // catch
       } // while
     } // Connect ---------------------------------------------------------------
 
@@ -224,6 +233,9 @@ namespace TerrariaIRC
     #endregion
 
 
+    /***************************************************************************
+     * Plugin Hooks                                                            *
+     ***************************************************************************/ 
     #region Plugin hooks
     // OnChat ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     void OnChat( messageBuffer msg, int player, string text, System.ComponentModel.HandledEventArgs e )
@@ -239,12 +251,13 @@ namespace TerrariaIRC
       if ( tsplr.mute )
         return;
       irc.SendMessage( SendType.Message, settings["channel"], string.Format( "({0}){1}: {2}",
-          tsplr.Group.Name, tsplr.Name, text ) );
+                                         tsplr.Group.Name, tsplr.Name, text ) );
+
     } // OnChat ----------------------------------------------------------------
 
 
     // OnJoin ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    void OnJoin( int player, System.ComponentModel.HandledEventArgs e )
+    void OnJoin( int player, HandledEventArgs e )
     {
       if ( !irc.IsConnected ) return;
       if ( e.Handled ) return;
@@ -257,26 +270,35 @@ namespace TerrariaIRC
                                       Main.player[player].statManaMax,
                                       Main.player[player].inventory[0].name,
                                       Main.player[player].inventory[0].stack ) );
-      //irc.SendMessage( SendType.Message, settings["channel"],
-      //                 string.Format( "Joined: {0} ({1}/{2})",
-      //                                Main.player[player].name,
-      //                                Main.player[player].statLifeMax,
-      //                                Main.player[player].statManaMax ) );
-      //irc.SendMessage( SendType.Message, settings["channel"], 
-      //                 string.Format( Main.player[player].name + 
-      //                                ": Inven 1: [{0}({1})] [{2}({3})] [{4}({5})] [{6}({7})]", 
-      //                                Main.player[player].inventory[0].name,
-      //                                Main.player[player].inventory[0].stack,
-      //                                Main.player[player].inventory[1].name,
-      //                                Main.player[player].inventory[1].stack,
-      //                                Main.player[player].inventory[2].name,
-      //                                Main.player[player].inventory[2].stack,
-      //                                Main.player[player].inventory[3].name,
-      //                                Main.player[player].inventory[3].stack
-      //                                ) );
+
     } // OnJoin ----------------------------------------------------------------
 
 
+    // OnLeave +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    void OnLeave( int player )
+    {
+      if ( !irc.IsConnected ) return;
+
+      irc.SendMessage( SendType.Message, settings["channel"],
+                        string.Format( "Left[{0}]: {1}",
+                        CountPlayers(),
+                        Main.player[player].name ) );
+
+    } // OnLeave ---------------------------------------------------------------
+
+    
+    // OnError +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    public static void OnError( object sender, ErrorEventArgs e )
+    {
+      Log.Error( "IRC Error: " + e.Data.RawMessage );
+    } // OnError ---------------------------------------------------------------
+    #endregion
+
+
+    /***************************************************************************
+     * Data Handlers                                                           *
+     ***************************************************************************/ 
+    // CountPlayers ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     private int CountPlayers()
     {
       int result = 0;
@@ -288,25 +310,10 @@ namespace TerrariaIRC
       return result;
     } // CountPlayers
 
-    // OnLeave +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    void OnLeave( int player )
-    {
-      if ( !irc.IsConnected ) return;
-      irc.SendMessage( SendType.Message, settings["channel"],
-                       string.Format( "Left[{0}]: {1}",
-                       CountPlayers(),
-                       Main.player[player].name ) );
-    } // OnLeave ---------------------------------------------------------------
-
     
-    // OnError +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    public static void OnError( object sender, ErrorEventArgs e )
-    {
-      Log.Error( "IRC Error: " + e.Data.RawMessage );
-    } // OnError ---------------------------------------------------------------
-    #endregion
-
-    
+    /***************************************************************************
+     * Plugin Properties                                                       *
+     ***************************************************************************/ 
     #region Plugin Properties
     // Name ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     public override string Name
@@ -333,7 +340,7 @@ namespace TerrariaIRC
     // Version +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    public override Version Version
     {
-      get { return new Version( 1, 2, 1, 1 ); }
+      get { return new Version( 1, 2, 1, 3 ); }
     } // Versin ----------------------------------------------------------------
 
     

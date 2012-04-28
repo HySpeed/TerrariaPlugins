@@ -198,11 +198,11 @@ namespace TerrariaIRC
       // showLifeMana ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       private static void showLifeMana( TShockAPI.TSPlayer player )
       {
-        TerrariaIRC.sendIRCMessage( string.Format( "{0} Life / Mana: ({1}/{2})",
+        TerrariaIRC.sendIRCMessage( string.Format( "{0}[{1}] Life / Mana: ({2}/{3})",
                                                    player.Name,
+                                                   player.IP,
                                                    player.FirstMaxHP,
                                                    player.FirstMaxMP ) );
-
       } // showLifeMana --------------------------------------------------------
 
 
@@ -215,7 +215,7 @@ namespace TerrariaIRC
         int buffType;
         int buffCount = player.TPlayer.countBuffs();
 
-        for ( int index = 0; index <= buffCount; index++ ) {
+        for ( int index = 0; index < buffCount; index++ ) {
           buffType = player.TPlayer.buffType[index];
           if ( buffType > 0 ) { 
             buffName = TShock.Utils.GetBuffName( buffType );
