@@ -1,5 +1,9 @@
 ## TerrariaIRC
 
+Ver 1.2.2.0
+* Added Logged In As (Account) to iinfo
+* Added Group to iinfo
+
 Ver 1.2.1.3
 * Added player IP to Life command
 * Added catch for IRC disconnect due to IRC split

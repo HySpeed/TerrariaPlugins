@@ -340,7 +340,7 @@ namespace TerrariaIRC
     // Version +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    public override Version Version
     {
-      get { return new Version( 1, 2, 1, 3 ); }
+      get { return new Version( 1, 2, 2, 0 ); }
     } // Versin ----------------------------------------------------------------
 
     

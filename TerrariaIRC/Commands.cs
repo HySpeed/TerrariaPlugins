@@ -51,10 +51,10 @@ namespace TerrariaIRC
           {
             action = args.Parameters[1].ToUpper();
 
-                 if ( action.Equals( "ACC" ) ) { showAcc( player ); } // if
-            else if ( action.Equals( "ARM" ) ) { showArm( player ); } // if
-            else if ( action.Equals( "AMM" ) ) { showAmm( player ); } // if
-            else if ( action.Equals( "INV" ) ) 
+                 if ( action.StartsWith( "AC" ) ) { showAcc( player ); } // if
+            else if ( action.StartsWith( "AR" ) ) { showArm( player ); } // if
+            else if ( action.StartsWith( "AM" ) ) { showAmm( player ); } // if
+            else if ( action.StartsWith( "IN" ) ) 
             { 
               if ( args.Parameters.Count == 3 ) 
               {
@@ -62,7 +62,7 @@ namespace TerrariaIRC
               } // if
               else 
               {
-                TerrariaIRC.sendIRCMessage( "Row required for INV action (e.g. iirc name row)" );
+                TerrariaIRC.sendIRCMessage( "Row required for INV action (e.g. IINV name ROW#)" );
               } // else
             } // if
             else 
@@ -182,11 +182,11 @@ namespace TerrariaIRC
           {
             action = args.Parameters[1].ToUpper();
 
-                 if ( action.Equals( "LIFE"  ) ) { showLifeMana( player ); } // if
-            else if ( action.Equals( "BUFFS" ) ) { showBuffs( player );    } // if
+                 if ( action.StartsWith( "L" ) ) { showLifeMana( player ); } // if
+            else if ( action.StartsWith( "B" ) ) { showBuffs( player );    } // if
             else 
             {
-                TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}", action ) );
+                TerrariaIRC.sendIRCMessage( string.Format( "Invalid action: {0}. Proper Syntax: /iinfo <player> [ Life | Buffs ]", action ) );
             } // else
           
           } // if
@@ -198,11 +198,14 @@ namespace TerrariaIRC
       // showLifeMana ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
       private static void showLifeMana( TShockAPI.TSPlayer player )
       {
-        TerrariaIRC.sendIRCMessage( string.Format( "{0}[{1}] Life / Mana: ({2}/{3})",
+
+        TerrariaIRC.sendIRCMessage( string.Format( "{0} [Ip:{1}] [Life/Mana: {2}/{3}] [Account: {4}] [Group: {5}]",
                                                    player.Name,
                                                    player.IP,
                                                    player.FirstMaxHP,
-                                                   player.FirstMaxMP ) );
+                                                   player.FirstMaxMP,
+                                                   player.UserAccountName,
+                                                   player.Group.Name ) );
       } // showLifeMana --------------------------------------------------------
 
 
