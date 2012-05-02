@@ -235,23 +235,26 @@ namespace TerrariaIRC
 
     /***************************************************************************
      * Plugin Hooks                                                            *
-     ***************************************************************************/ 
+     **************************************************************************/ 
     #region Plugin hooks
     // OnChat ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    void OnChat( messageBuffer msg, int player, string text, System.ComponentModel.HandledEventArgs e )
+    void OnChat( messageBuffer   message, 
+                int              playerId, 
+                string           text, 
+                HandledEventArgs eventArgs )
     {
       if ( !irc.IsConnected ) return;
-      var tsplr = TShock.Players[msg.whoAmI];
-      if ( tsplr == null )
-        return;
-      if ( !TShock.Utils.ValidString( text ) )
-        return;
-      if ( text.StartsWith( "/" ) )
-        return;
-      if ( tsplr.mute )
-        return;
+      var player = TShock.Players[message.whoAmI];
+      if ( player == null ) return;
+      if ( !TShock.Utils.ValidString( text ) ) return;
+      if ( player.mute ) return;
+
+      //if ( text.StartsWith( "/" ) ) return;
+      if ( text.StartsWith( "/" ) ) 
+        text = ScrubCommand( text );
+
       irc.SendMessage( SendType.Message, settings["channel"], string.Format( "({0}){1}: {2}",
-                                         tsplr.Group.Name, tsplr.Name, text ) );
+                                         player.Group.Name, player.Name, text ) );
 
     } // OnChat ----------------------------------------------------------------
 
@@ -297,7 +300,7 @@ namespace TerrariaIRC
 
     /***************************************************************************
      * Data Handlers                                                           *
-     ***************************************************************************/ 
+     **************************************************************************/ 
     // CountPlayers ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     private int CountPlayers()
     {
@@ -308,12 +311,27 @@ namespace TerrariaIRC
       } // foreach
 
       return result;
-    } // CountPlayers
+    } // CountPlayers ----------------------------------------------------------
+
+
+    // ScrubCommand ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    // filter out command arguments with password info
+    private string ScrubCommand( string text ) {
+      string result = text.Remove( 0, 1 ).ToLower().Trim();
+
+      if ( result.StartsWith( "register" ) ) result = "register";
+      if ( result.StartsWith( "login"    ) ) result = "login";
+      if ( result.StartsWith( "password" ) ) result = "password";
+
+      result = "command: " + result;
+
+      return result;
+    } // ScrubCommand ----------------------------------------------------------
 
     
     /***************************************************************************
      * Plugin Properties                                                       *
-     ***************************************************************************/ 
+     **************************************************************************/ 
     #region Plugin Properties
     // Name ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     public override string Name
@@ -340,14 +358,14 @@ namespace TerrariaIRC
     // Version +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    public override Version Version
     {
-      get { return new Version( 1, 2, 2, 0 ); }
+      get { return new Version( 1, 2, 3, 0 ); }
     } // Versin ----------------------------------------------------------------
 
     
     // TerrariaIRC +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     public TerrariaIRC( Main game ) : base( game )
     {
-      Order = 10;
+      Order = -9;
     } // TerrariaIRC -----------------------------------------------------------
     #endregion
 

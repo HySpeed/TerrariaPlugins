@@ -1,5 +1,11 @@
 ## TerrariaIRC
 
+Ver 1.2.3.0
+* Added display of player commands to irc chat with filters on:
+* * register
+* * login
+* * password
+
 Ver 1.2.2.0
 * Added Logged In As (Account) to iinfo
 * Added Group to iinfo
