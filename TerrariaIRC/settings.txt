@@ -1,0 +1,25 @@
+# - comments
+# Server Host
+server=irc.irondust.net
+# Port
+port=6667
+# Bot nickname
+botName=jgallant-pvp
+
+# Nick of nickserv for identify
+nickServ=NickServ
+# Command to send to NickServ to identify
+password=identify asdfcake
+
+# Allow +o's to have superadmin access to server
+allowOp=True
+
+# Enable for second channel
+dualChannels=true
+# The primary channel to join
+chatChannel=#jgallant-pvp
+# The secondary channel to join
+actionChannel=#jgallant-nps
+
+# Use colours
+useColours=true

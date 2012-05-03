@@ -1,5 +1,10 @@
 ## TerrariaIRC
 
+Ver 2.0.1.0
+* Single settings file with optional second channel
+* Support for GEO info on Join
+- Support for IRC colors (doesn't work)
+
 Ver 2.0.0.0
 * Added support for second channel (Chat, Action)
 o o Still need to merge two settings files

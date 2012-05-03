@@ -28,7 +28,7 @@ namespace TerrariaIRC
       public static void Reconnect( CommandArgs args )
       {
         TerrariaIRC.resetConnectionSettings();
-        TerrariaIRC.irc.Disconnect();
+        TerrariaIRC._ircClient.Disconnect();
         TShock.Utils.SendLogs( "Disconnected from IRC, reconnecting.", Color.Red );
       } // Reconnect -----------------------------------------------------------
 
