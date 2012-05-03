@@ -1,0 +1,16 @@
+# - comments
+#Server Host
+server=irc.irondust.net
+#server=junk
+#Port
+port=6667
+#Allow +o's to have superadmin access to server
+allowop=True
+#The channel to join
+channel=#jgallant-pvp
+#Bot nickname
+botname=jgallant-pvp
+#Nick of nickserv for identify
+nickserv=NickServ
+#Command to send to NickServ to identify
+password=identify asdfcake

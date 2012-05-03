@@ -1,5 +1,12 @@
 ## TerrariaIRC
 
+Ver 2.0.0.0
+* Added support for second channel (Chat, Action)
+o o Still need to merge two settings files
+* Added support to see actions with chests (put, get)
+* Changed /(command) and chest to route to ActionChannel
+* Added filter for cunlock
+
 Ver 1.2.3.0
 * Added display of player commands to irc chat with filters on:
 * * register
